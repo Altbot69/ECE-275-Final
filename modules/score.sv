@@ -12,6 +12,8 @@ module score (
 	// scores
 	reg [2:0] left_score;
 	reg [2:0] right_score;
+	reg [5:0] next_left_score;
+	reg [5:0] next_right_score;
 
 	// reset state
 	always @(posedge reset) 
@@ -21,14 +23,14 @@ module score (
 	end
 
 	// score incrementing
-	always @(score_left, score_right) 
+	always @(next_left_score, next_right_score) 
 	begin
-		if (score_left)
-			left_score = left_score + 3'd1;
+		if (next_left_score)
+			next_left_score = left_score + 3'd1;
 		
-		if (score_right) 
-			right_score = right_score + 3'd1;
-	end
+		if (next_right_score) 
+			next_right_score = right_score + 3'd1;
+	end 
 
 	// convert left score to BCD
 	wire [2:0] left_binary_in = left_score[2:0];
@@ -43,7 +45,7 @@ module score (
 			for (int i = 0; i < 3; i = i + 1) 
 			begin
 					left_bcd = left_bcd << 1;
-					left_bcd[0] = left_binary[3];
+					left_bcd[0] = left_binary[2];
 					left_binary = left_binary << 1;
 
 					if (left_bcd >= 4'd5)
@@ -51,7 +53,7 @@ module score (
 			end
 
 			left_bcd = left_bcd << 1;
-			left_bcd[0] = left_binary[3];
+			left_bcd[0] = left_binary[2];
 	end
 
 	// convert scores to BCD
