@@ -1,13 +1,15 @@
-`include "modules/slow_clock.sv"
-`include "modules/ball.sv"
-// `include "modules/paddles.sv"
-// `include "modules/score.sv"
-`include "modules/DE0_VGA.v"
-`include "modules/display.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\slow_clock.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\ball.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\paddles.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\score.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\DE0_VGA.v"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\display.sv"
 
 module pongtop (
+	input CLOCK_50,
 	input [2:0] BUTTON,
-	input wire CLOCK_50,
+	output [6:0] HEX0_D, 	// Right score output
+	output [6:0] HEX1_D,  // Left score output
 	output wire	[3:0]	VGA_R,		//Output Red
 	output wire	[3:0]	VGA_G,		//Output Green
 	output wire	[3:0]	VGA_B,		//Output Blue
@@ -46,24 +48,25 @@ module pongtop (
 		.pixel_cnt(pixel_cnt)
 	);
 
+	// Invert the buttons as they are active low
+	wire reset = ~BUTTON[2];
 
 	// Parameters for the pong modules
-	// Need to be signed
 	localparam RIGHT_BOUNDARY = 637;
 	localparam LEFT_BOUNDARY = 3;
 	localparam TOP_BOUNDARY = 3;
 	localparam BOTTOM_BOUNDARY = 477;
-	localparam PLAYER_PADDLE_X = 10;
-	localparam AI_PADDLE_X = 620;
-	localparam PADDLE_WIDTH = 10;
-	localparam PADDLE_HEIGHT = 46;
+	localparam PLAYER_PADDLE_X = 10'd10;
+	localparam AI_PADDLE_X = 10'd620;
+	localparam PADDLE_WIDTH = 10'd10;
+	localparam PADDLE_HEIGHT = 10'd46;
 	localparam BALL_SIZE = 7;
 	
-	/* This tells the slow clock module how much to count. 
+	/* This tells the slow clock module how much to count. NEEDS TO BE 28 BITS. 
 	 * Since it's based on the 18.43MHz pixel clock 1 cycle is 54 ns, 
 	 * so total slow clock cycle will be MAX_COUNT * 54ns. 
 	 * Works best if it is a multiple of 307200 (1 frame) */
-	localparam MAX_COUNT = 20'd614400; 
+	localparam MAX_COUNT = 28'd614400; 
 
 	// Pong modules
 	reg slw_clk;
@@ -80,8 +83,6 @@ module pongtop (
 
 	// Paddle state and player input
 	// reg paddle_state [19:0];
-	wire [9:0] left_paddle_y = 10'd217;
-	wire [9:0] right_paddle_y = 10'd217;
 	// paddles paddle_mod(
 	// 	.clk(slwclk), 
 	// 	.reset(BUTTON[2]), 
@@ -101,35 +102,23 @@ module pongtop (
 		.RIGHT_BOUNDARY(RIGHT_BOUNDARY),
 		.LEFT_BOUNDARY(LEFT_BOUNDARY),
 		.TOP_BOUNDARY(TOP_BOUNDARY),
-		.BOTTOM_BOUNDARY(BOTTOM_BOUNDARY),
-		.PADDLE_HEIGHT(PADDLE_HEIGHT),
-		.PADDLE_WIDTH(PADDLE_WIDTH),
-		.PLAYER_PADDLE_X(PLAYER_PADDLE_X),
-		.AI_PADDLE_X(AI_PADDLE_X)
+		.BOTTOM_BOUNDARY(BOTTOM_BOUNDARY)
 	)
 	ball_mod(
 		.clk(slw_clk),
 		.reset(reset),
-		.left_paddle_y(left_paddle_y),
-		.right_paddle_y(right_paddle_y),
 		.score_right(score_right),
 		.score_left(score_left),
 		.ball_pos_x(ball_x),
 		.ball_pos_y(ball_y)
 	);
 
-	wire score_reset = (score_left || score_right) ? 1 : 0;
-	wire reset = (~BUTTON[2] || score_reset) ? 1 : 0;
-
-	// Score and game over states
-	// reg [5:0] current_score;
-	// reg game_over;
-	// score score_mod(
-	// 	.reset(BUTTON[2]),
-	// 	.score_state(score_state[1:0]),
-	// 	.current_score(current_score[5:0]),
-	// 	.game_over(game_over)
-	// );
+	score score_mod(
+		.clk(CLOCK_50),
+		.reset(BUTTON[2]),
+		.right_hex(HEX0_D),
+		.left_hex(HEX1_D)
+	);
 
 	// This module holds all of the different draw modules (paddles, screen edge,
 	// ball, score) and outputs when pixels should be white or black
@@ -159,11 +148,20 @@ module pongtop (
 	display_mod(
 		.ball_x(unsigned_ball_x[9:0]),
 		.ball_y(unsigned_ball_y[9:0]),
-		.left_paddle(left_paddle_y),
-		.right_paddle(right_paddle_y),
 		.X_pix(X_pix),
 		.Y_pix(Y_pix),
 		.draw(draw)
+	);
+	
+	
+    paddles moving_mod(
+	.clk(CLOCK_50),
+	.reset(BUTTON[2]),
+	.button_up(BUTTON[1]),
+	.button_down(BUTTON[0]),
+	//.ball_pos_y(ball_y),
+	.player_paddle(player_paddle),
+	.ai_paddle(ai_paddle)
 	);
 
 	// Takes the output from the display module and tells the VGA driver what to
