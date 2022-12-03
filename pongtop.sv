@@ -1,13 +1,15 @@
-`include "modules/slow_clock.sv"
-`include "modules/ball.sv"
-// `include "modules/paddles.sv"
-// `include "modules/score.sv"
-`include "modules/DE0_VGA.v"
-`include "modules/display.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\slow_clock.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\ball.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\paddles.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\score.sv"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\DE0_VGA.v"
+`include "C:\altera\13.0sp1\ModelSim Files and Modules for final Project\VGA\pong\Modules\display.sv"
 
 module pongtop (
+	input CLOCK_50,
 	input [2:0] BUTTON,
-	input wire CLOCK_50,
+	output [6:0] HEX0_D, 	// Right score output
+	output [6:0] HEX1_D,  // Left score output
 	output wire	[3:0]	VGA_R,		//Output Red
 	output wire	[3:0]	VGA_G,		//Output Green
 	output wire	[3:0]	VGA_B,		//Output Blue
@@ -111,15 +113,12 @@ module pongtop (
 		.ball_pos_y(ball_y)
 	);
 
-	// Score and game over states
-	// reg [5:0] current_score;
-	// reg game_over;
-	// score score_mod(
-	// 	.reset(BUTTON[2]),
-	// 	.score_state(score_state[1:0]),
-	// 	.current_score(current_score[5:0]),
-	// 	.game_over(game_over)
-	// );
+	score score_mod(
+		.clk(CLOCK_50),
+		.reset(BUTTON[2]),
+		.right_hex(HEX0_D),
+		.left_hex(HEX1_D)
+	);
 
 	// This module holds all of the different draw modules (paddles, screen edge,
 	// ball, score) and outputs when pixels should be white or black
@@ -152,6 +151,17 @@ module pongtop (
 		.X_pix(X_pix),
 		.Y_pix(Y_pix),
 		.draw(draw)
+	);
+	
+	
+	paddles paddles_mod(
+	.clk(CLOCK_50),
+	.reset(BUTTON[2]),
+	.button_up(BUTTON[1]),
+	.button_down(BUTTON[0]),
+	.ball_pos_y(ball_y),
+	.player_paddle(player_paddle),
+	.ai_paddle(ai_paddle)
 	);
 
 	// Takes the output from the display module and tells the VGA driver what to
