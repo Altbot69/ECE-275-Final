@@ -12,14 +12,16 @@ module paddles (
 		.clk(clk),
 		.reset(reset),
 		.button_up(button_up),
-		.button_down(button_down)
+		.button_down(button_down),
+		.player_paddle(player_paddle)
 	);
 
 	// right paddle
 	ai_paddle ai(
 		.clk(clk),
 		.reset(reset),
-		.ball_pos_y(ball_pos_y)
+		.ball_pos_y(ball_pos_y),
+		.ai_paddle(ai_paddle)
 	);
 endmodule
 
@@ -29,7 +31,8 @@ module player_paddle(
 	input wire reset,
 	input button_up,
 	input button_down,
-	output [9:0] paddle_pos
+	output reg [9:0] player_paddle
+	
 );
 	// Looks at button inputs to move
 	//1.  Registers
@@ -37,7 +40,7 @@ module player_paddle(
 	reg [9:0] player_paddle_y_position; //This will be changeable given certain conditions
 	reg [9:0] player_paddle_next_y_position;
 
-	always @(posedge clk or posedge reset)
+	always @(posedge clk, posedge reset)
 	begin
 		if(reset)
 			player_paddle_y_position <= 9'd240; //Puts paddle in middle position
@@ -52,7 +55,6 @@ module player_paddle(
 		begin
 			if(button_down == 1 && button_up == 0)
 				player_paddle_next_y_position = player_paddle_y_position + 1; //Moves the paddle down
-
 			else
 				player_paddle_next_y_position = player_paddle_y_position;
 		end
@@ -79,10 +81,10 @@ module player_paddle(
 		end
 	end
 	
+	
+	assign player_paddle = player_paddle_y_position;
 	//3. Input state -> output
 	//Nothing to do because state = player_paddle_y_position = output
-	
-	assign paddle_pos = player_paddle_y_position;
 	
 endmodule
 
@@ -90,8 +92,8 @@ endmodule
 module ai_paddle(
 	input wire clk,
 	input wire reset,
-	input wire ball_pos_y,
-	output [9:0] paddle_pos
+	input wire [9:0] ball_pos_y,
+	output reg [9:0] ai_paddle
 );
 	// Looks at ball state to move
 	
@@ -105,7 +107,7 @@ module ai_paddle(
 	reg [9:0] ai_paddle_y_position; //This will be changeable given certain conditions
 	reg [9:0] ai_paddle_next_y_position;
 	
-	always @(posedge clk or posedge reset)
+	always @(posedge clk, posedge reset)
 	begin
 		if(reset)
 			ai_paddle_y_position <= 9'd240; //Puts paddle in middle position
@@ -117,16 +119,14 @@ module ai_paddle(
 	always @(*)
 	begin
 		if(ball_pos_y > ai_paddle_y_position) //If the ball y position is greater then the ai paddle (that means the ball is below the ai paddle) 
-			ai_paddle_next_y_position = ai_paddle_y_position - 1; //Then the ai paddle will move down to be level with the ball 
+			ai_paddle_next_y_position = ai_paddle_y_position + 1; //Then the ai paddle will move down to be level with the ball 
 
 		if(ball_pos_y < ai_paddle_y_position) //If the ball y position is lower then the ai paddle (that means the ball is above the ai paddle)
-			ai_paddle_next_y_position = ai_paddle_y_position + 1; //Then the ai paddle will move above to be level with the ball
+			ai_paddle_next_y_position = ai_paddle_y_position - 1; //Then the ai paddle will move above to be level with the ball
 	end
 
+	assign ai_paddle = ai_paddle_y_position; 
+	
 	//The thing that would make this easier or harder is all dependant on the speed of the ai paddle
 	
-	assign paddle_pos = ai_paddle_y_position;
-	
-endmodule 
-	
-	
+endmodule
