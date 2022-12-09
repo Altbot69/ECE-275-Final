@@ -5,12 +5,26 @@
  *  
  *  Reads player input and ball positions to update paddle position
  */
- 
+
+
+
+
+
 module paddles (
 	input wire clk,
 	input wire reset,
 	input button_up,
 	input button_down,
+	
+	//These next two inputs will decide how fast the paddles go
+	//
+	//Which will determine the difficulty of the game
+	
+	//input SW[0], //Medium mode
+	//input SW[1], //Hard mode
+	//
+	//Something for paddle speed
+	//
 	input wire [9:0] ball_pos_y,
 	output reg [9:0] player_paddle,
 	output reg [9:0] ai_paddle
@@ -31,7 +45,6 @@ module paddles (
 		.ball_pos_y(ball_pos_y),
 		.ai_paddle(ai_paddle)
 	);
-
 endmodule
 
 // Left paddle
@@ -44,7 +57,8 @@ module player_paddle(
 	
 );
 	// Looks at button inputs to move
-	// 1.  Registers
+	//1.  Registers
+	reg [9:0] player_paddle_x_position; //Can remain the same
 	reg [9:0] player_paddle_y_position; //This will be changeable given certain conditions
 	reg [9:0] player_paddle_next_y_position;
 
@@ -111,6 +125,7 @@ module ai_paddle(
 	 * So it will look something like this below
 	 */
 
+	reg [9:0] ai_paddle_x_position; //Should remain the same
 	reg [9:0] ai_paddle_y_position; //This will be changeable given certain conditions
 	reg [9:0] ai_paddle_next_y_position;
 	
@@ -133,5 +148,7 @@ module ai_paddle(
 	end
 
 	assign ai_paddle = ai_paddle_y_position; 
-
+	
+	//The thing that would make this easier or harder is all dependant on the speed of the ai paddle
+	
 endmodule
